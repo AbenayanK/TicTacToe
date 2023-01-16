@@ -10,7 +10,7 @@ window_size = (450, 450)
 screen = pygame.display.set_mode(window_size)
 
 # Set the title of the window
-pygame.display.set_caption("Tic Tac Toe")
+pygame.display.set_caption("Lucianos Tic Tac Toe Game")
 
 # Colors
 WHITE = (255, 255, 255)
