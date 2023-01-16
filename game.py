@@ -13,8 +13,9 @@ screen = pygame.display.set_mode(window_size)
 pygame.display.set_caption("Tic Tac Toe")
 
 # Colors
-BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+GRAY = (200, 200, 200)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 
@@ -46,6 +47,9 @@ line_width = 10
 # Set the line color
 line_color = WHITE
 
+# Fonts
+FONT = pygame.font.SysFont('arial', 50)
+
 # Set the X and O colors
 color1 = RED
 color2 = BLUE
@@ -53,26 +57,31 @@ color2 = BLUE
 X = "X"
 O = "O"
 
+def get_center(row, col):
+    x = (col + 0.5) * cell_size
+    y = (row + 0.5) * cell_size
+    return x, y
+
 
 def draw_board():
-  # Draw the grid
-  for row in range(3):
-    for col in range(3):
-      # Get the center coordinates of the cell
-      x, y = get_center(row, col)
-      if board[row][col] == X:
-        # Draw X
-        pygame.draw.line(screen, color1, (x - radius, y - radius), (x + radius, y + radius), line_width)
-        pygame.draw.line(screen, color1, (x - radius, y + radius), (x + radius, y - radius), line_width)
-      elif board[row][col] == O:
-        # Draw O
-        pygame.draw.circle(screen, color2, (int(x), int(y)), radius, line_width)
+    # Draw the grid
+    for row in range(3):
+        for col in range(3):
+            # Get the center coordinates of the cell
+            x, y = get_center(row, col)
+            if board[row][col] == X:
+                # Draw X
+                pygame.draw.line(screen, color1, (x - radius, y - radius), (x + radius, y + radius), line_width)
+                pygame.draw.line(screen, color1, (x - radius, y + radius), (x + radius, y - radius), line_width)
+            elif board[row][col] == O:
+                # Draw O
+                pygame.draw.circle(screen, color2, (int(x), int(y)), radius, line_width)
 
 def draw_grid():
     for row in range(1, 3):
-      pygame.draw.line(screen, BLACK, (0, row * cell_size), (3 * cell_size, row * cell_size), 2)
+        pygame.draw.line(screen, BLACK, (0, row * cell_size), (3 * cell_size, row * cell_size), 2)
     for col in range(1, 3):
-      pygame.draw.line(screen, BLACK, (col * cell_size, 0), (col * cell_size, 3 * cell_size), 2)
+        pygame.draw.line(screen, BLACK, (col * cell_size, 0), (col * cell_size, 3 * cell_size), 2)
 
 
 def draw():
@@ -88,89 +97,60 @@ def mouse_clicked(pos):
     # Place the X or O on the board
     place_marker(row, col, current_player)
 
-
 def place_marker(row, col, player):
-  # Check if the cell is empty
-  if board[row][col] is None:
-    # Update the board
-    board[row][col] = player
-    draw_marker(player, color1, color2, (row, col))
-    # Switch to the other player
-    global current_player
-    current_player = O if player == X else X
-    draw()
-    check_win()
-  else:
-    print("This cell is already occupied")
+    # Check if the cell is empty
+    if board[row][col] is None:
+        # Update the board
+        board[row][col] = player
+        # draw_marker(player, color1, color2, (row, col))
+        # Switch to the other player
+        global current_player
+        current_player = O if player == X else X
+        draw()
+        check_win()
+    else:
+        print("This cell is already occupied")
 
+def check_win_and_draw_line(board, marker):
+    for row in range(3):
+        if all(board[row][col] == marker for col in range(3)):
+            pygame.draw.line(screen, BLACK, (margin, (row + 1) * cell_size - margin), ((3 * cell_size) - margin, (row + 1) * cell_size - margin), line_width)
+            return True
+    for col in range(3):
+        if all(board[row][col] == marker for row in range(3)):
+            pygame.draw.line(screen, BLACK, ((col + 1) * cell_size - margin, margin), ((col + 1) * cell_size - margin, (3 * cell_size) - margin), line_width)
+            return True
+    if all(board[i][i] == marker for i in range(3)):
+        pygame.draw.line(screen, BLACK, (margin, margin), ((3 * cell_size) - margin, (3 * cell_size) - margin), line_width)
+        return True
+    if all(board[i][2 - i] == marker for i in range(3)):
+        pygame.draw.line(screen, BLACK, ((3 * cell_size) - margin, margin), (margin, (3 * cell_size) - margin), line_width)
+        return True
+    return False
 
 def check_win():
-    if is_winner(board, X):
-        print("Player X wins")
-    elif is_winner(board, O):
-        print("Player O wins")
-    elif is_full(board):
-        print("Its a tie!")
+    if check_win_and_draw_line(board, X) or check_win_and_draw_line(board, O):
+        print("Player", current_player, "wins")
+        pygame.display.flip()
 
+def create_play_again_button():
+    button_text = "Play Again"
+    font = pygame.font.SysFont('arial', 30)
+    button_surface = font.render(button_text, True, (0, 0, 0))
+    button_rect = button_surface.get_rect()
+    button_rect.center = (window_size[0]/2, window_size[1]/2)
+    screen.blit(button_surface, button_rect)
+    pygame.display.flip()
+    return button_rect
 
-def is_full(board):
-  for row in board:
-    if None in row:
-      return False
-  return True
+def play():
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_clicked(event.pos)
+    pygame.quit()
 
-
-def is_winner(board, marker):
-  # Check if there is a win horizontally
-  for row in range(3):
-    if all(board[row][col] == marker for col in range(3)):
-      return True
-  # Check if there is a win vertically
-  for col in range(3):
-    if all(board[row][col] == marker for row in range(3)):
-      return True
-  # Check if there is a win diagonally
-  if all(board[i][i] == marker for i in range(3)):
-    return True
-  if all(board[i][2 - i] == marker for i in range(3)):
-    return True
-  return False
-
-
-def get_center(row, col):
-  x = (col + 0.5) * cell_size
-  y = (row + 0.5) * cell_size
-  return x, y
-
-
-def draw_marker(marker, color1, color2, pos):
-  row, col = pos  # Unpack the tuple into row and col
-  # Draw an X
-  if marker == X:
-    # Get the center coordinates of the cell
-    x, y = get_center(row, col)
-    # Draw the left diagonal line
-    pygame.draw.line(screen, color1, (x - radius, y - radius), (x + radius, y + radius), line_width)
-    # Draw the right diagonal line
-    pygame.draw.line(screen, color1, (x - radius, y + radius), (x + radius, y - radius), line_width)
-  # Draw an O
-  elif marker == O:
-    # Get the center coordinates of the cell
-    x, y = get_center(row, col)
-    # Draw the circle
-    pygame.draw.circle(screen, color2, (int(x), int(y)), radius, line_width)
-
-    # Main loop
-
-
-running = True
-while running:
-  for event in pygame.event.get():
-    if event.type == pygame.QUIT:
-      running = False
-    elif event.type == pygame.MOUSEBUTTONDOWN:
-      mouse_clicked(event.pos)
-
-# Exit Pygame
-pygame.quit()
-
+play()
